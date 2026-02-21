@@ -1,6 +1,18 @@
 {
   "name": "prog-time/max-php-sdk",
+  "description": "PHP SDK for the Max messenger Bot API",
   "type": "library",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Ilya Lyashchuk",
+      "email": "iliya-rabota97@mail.ru",
+      "homepage": "https://lyashchuk.pro",
+      "role": "Developer"
+    }
+  ],
+  "keywords": ["max", "max-bot", "messenger", "bot", "sdk", "api"],
+  "homepage": "https://github.com/prog-time/max-php-sdk",
   "autoload": {
     "psr-4": {
       "MaxBotApi\\": "src/"
