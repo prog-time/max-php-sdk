@@ -13,10 +13,10 @@ else
 fi
 
 # -----------------------------
-# Laravel / Artisan tests
+# Tests
 # -----------------------------
-echo -e "🧪 Running Laravel tests (php artisan test)..."
-php artisan test --stop-on-failure
+echo -e "🧪 Running tests..."
+vendor/bin/phpunit
 if [ $? -ne 0 ]; then
     echo -e "❌ Push blocked due to failing tests."
     exit 1
