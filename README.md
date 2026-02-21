@@ -28,9 +28,9 @@ $client->messages->send(text: 'Hello!', chatId: 123456789);
 
 ```php
 $config = new Config(
-    token:   'your-bot-token',  // required
+    token:   'your-bot-token',              // required
     baseUrl: 'https://platform-api.max.ru', // optional, default value
-    timeout: 10,                // optional, seconds, default 10
+    timeout: 10,                            // optional, seconds, default 10
 );
 ```
 
@@ -43,9 +43,9 @@ $config = new Config(
 ```php
 $bot = $client->bot->me();
 
-echo $bot->name;       // display name
-echo $bot->userId;     // int
-echo $bot->username;   // string|null
+echo $bot->name;
+echo $bot->userId;
+echo $bot->username;
 ```
 
 ---
