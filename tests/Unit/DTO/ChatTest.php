@@ -29,7 +29,7 @@ final class ChatTest extends TestCase
         $this->assertSame('Test Group', $chat->title);
         $this->assertSame(5, $chat->participantsCount);
         $this->assertSame(42, $chat->ownerId);
-        $this->assertFalse($chat->isPublic);
+        $this->assertTrue($chat->isPublic);
     }
 
     public function testFromArrayDefaultValues(): void
