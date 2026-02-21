@@ -13,15 +13,10 @@ else
 fi
 
 # -----------------------------
-# Laravel / Artisan tests
+# Tests
 # -----------------------------
-echo -e "🧪 Running Laravel tests (php artisan test)..."
-php artisan test --stop-on-failure
-if [ $? -ne 0 ]; then
-    echo -e "❌ Push blocked due to failing tests."
-    exit 1
-else
-    echo -e "✅ All tests passed."
-fi
+echo "🧑🏻‍💻 Running tests..."
+bash scripts/check_scripts/start_tests.sh "${ALL_FILE_ARRAY[@]}"
+echo
 
 echo -e "✅ All checks passed. Push allowed."

@@ -12,12 +12,7 @@ set -e
 # CONFIG
 # -----------------------------
 EXCLUDE_PATTERNS=(
-    "*Test" "*Search" "*Controller*" "*Console*" "*Jobs*"
-    "*Models*" "*Resources*" "*Requests*" "*DTO*" "*Dtos*"
-    "*Kernel*" "*Middleware*" "*config*" "*ValueObject*"
-    "*Enum*" "*Exception*" "*Migration*" "*Seeder*"
-    "*MockDto*" "*api*" "*Providers*" "*Abstract*"
-    "*Rules*"
+    "*Test"
 )
 
 # -----------------------------

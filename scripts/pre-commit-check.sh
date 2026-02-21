@@ -37,7 +37,3 @@ echo "----------"
 # MODIFIED FILES
 bash scripts/check_scripts/check_phpstan.sh lenient "${ALL_FILE_ARRAY[@]}"
 echo "----------"
-
-echo "🧑🏻‍💻 Running tests..."
-bash scripts/check_scripts/start_tests.sh "${ALL_FILE_ARRAY[@]}"
-echo
