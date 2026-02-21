@@ -36,6 +36,11 @@ echo "[PHPStan] Checking ${#FILES[@]} files (strictness=$STRICTNESS)"
 # LOOP THROUGH FILES
 # -----------------------------
 for FILE in "${FILES[@]}"; do
+    # Skip non-PHP files silently
+    if [[ "${FILE##*.}" != "php" ]]; then
+        continue
+    fi
+
     # Skip if file does not exist (safety check)
     if [ ! -f "$FILE" ]; then
         echo "File not found, skipping: $FILE"
