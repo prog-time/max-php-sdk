@@ -6,16 +6,29 @@ namespace MaxBotApi\Resources;
 
 use MaxBotApi\DTO\Chat;
 use MaxBotApi\DTO\Message;
+use MaxBotApi\Exceptions\ApiException;
+use MaxBotApi\Exceptions\NetworkException;
+use MaxBotApi\Exceptions\RateLimitException;
 use MaxBotApi\Http\HttpClient;
 
+/**
+ * Resource for chat endpoints.
+ */
 final class Chats
 {
-    public function __construct(private HttpClient $http) {}
+    public function __construct(private readonly HttpClient $http) {}
 
     /**
      * Get all chats the bot participates in.
      *
+     * @param int      $count  Maximum number of chats to return.
+     * @param int|null $marker Pagination cursor from the previous response.
+     *
      * @return Chat[]
+     *
+     * @throws RateLimitException On HTTP 429 Too Many Requests.
+     * @throws ApiException       On HTTP 4xx or 5xx error response.
+     * @throws NetworkException   On connection failure or timeout.
      */
     public function list(int $count = 50, ?int $marker = null): array
     {
@@ -28,12 +41,18 @@ final class Chats
 
         return array_map(
             static fn(array $c) => Chat::fromArray($c),
-            $data['chats'] ?? []
+            $data['chats'] ?? [],
         );
     }
 
     /**
-     * Get chat info by ID.
+     * Get chat information by ID.
+     *
+     * @param int $chatId Unique chat identifier.
+     *
+     * @throws RateLimitException On HTTP 429 Too Many Requests.
+     * @throws ApiException       On HTTP 4xx or 5xx error response.
+     * @throws NetworkException   On connection failure or timeout.
      */
     public function get(int $chatId): Chat
     {
@@ -43,7 +62,15 @@ final class Chats
     }
 
     /**
-     * Update chat info (title, description, etc.).
+     * Update chat metadata such as title or description.
+     *
+     * @param int         $chatId      Unique chat identifier.
+     * @param string|null $title       New chat title.
+     * @param string|null $description New chat description.
+     *
+     * @throws RateLimitException On HTTP 429 Too Many Requests.
+     * @throws ApiException       On HTTP 4xx or 5xx error response.
+     * @throws NetworkException   On connection failure or timeout.
      */
     public function update(int $chatId, ?string $title = null, ?string $description = null): Chat
     {
@@ -59,6 +86,12 @@ final class Chats
 
     /**
      * Delete a chat.
+     *
+     * @param int $chatId Unique chat identifier.
+     *
+     * @throws RateLimitException On HTTP 429 Too Many Requests.
+     * @throws ApiException       On HTTP 4xx or 5xx error response.
+     * @throws NetworkException   On connection failure or timeout.
      */
     public function delete(int $chatId): bool
     {
@@ -68,8 +101,15 @@ final class Chats
     }
 
     /**
-     * Send a bot action to a chat (e.g. "typing...").
-     * Actions: typing_on, sending_photo, sending_video, sending_audio, sending_file, mark_seen.
+     * Send a typing or media indicator action to a chat.
+     *
+     * @param int    $chatId Unique chat identifier.
+     * @param string $action One of: typing_on, sending_photo, sending_video,
+     *                       sending_audio, sending_file, mark_seen.
+     *
+     * @throws RateLimitException On HTTP 429 Too Many Requests.
+     * @throws ApiException       On HTTP 4xx or 5xx error response.
+     * @throws NetworkException   On connection failure or timeout.
      */
     public function sendAction(int $chatId, string $action): bool
     {
@@ -79,7 +119,13 @@ final class Chats
     }
 
     /**
-     * Get the pinned message in a chat.
+     * Get the currently pinned message in a chat.
+     *
+     * @param int $chatId Unique chat identifier.
+     *
+     * @throws RateLimitException On HTTP 429 Too Many Requests.
+     * @throws ApiException       On HTTP 4xx or 5xx error response.
+     * @throws NetworkException   On connection failure or timeout.
      */
     public function getPinnedMessage(int $chatId): ?Message
     {
@@ -94,6 +140,14 @@ final class Chats
 
     /**
      * Pin a message in a chat.
+     *
+     * @param int    $chatId    Unique chat identifier.
+     * @param string $messageId Unique identifier of the message to pin.
+     * @param bool   $notify    Whether to notify chat members about the pinned message.
+     *
+     * @throws RateLimitException On HTTP 429 Too Many Requests.
+     * @throws ApiException       On HTTP 4xx or 5xx error response.
+     * @throws NetworkException   On connection failure or timeout.
      */
     public function pinMessage(int $chatId, string $messageId, bool $notify = true): bool
     {
@@ -109,7 +163,13 @@ final class Chats
     }
 
     /**
-     * Unpin the pinned message in a chat.
+     * Unpin the currently pinned message in a chat.
+     *
+     * @param int $chatId Unique chat identifier.
+     *
+     * @throws RateLimitException On HTTP 429 Too Many Requests.
+     * @throws ApiException       On HTTP 4xx or 5xx error response.
+     * @throws NetworkException   On connection failure or timeout.
      */
     public function unpinMessage(int $chatId): bool
     {

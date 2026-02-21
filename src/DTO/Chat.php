@@ -4,18 +4,33 @@ declare(strict_types=1);
 
 namespace MaxBotApi\DTO;
 
+/**
+ * Represents a Max chat (dialog, group chat, or channel).
+ */
 final class Chat
 {
+    /**
+     * @param int         $chatId            Unique chat identifier.
+     * @param string      $type              Chat type: 'dialog', 'chat', or 'channel'.
+     * @param string      $status            Membership status: 'active', 'removed', 'left', 'closed', 'suspended'.
+     * @param string|null $title             Chat title (null for dialogs).
+     * @param int|null    $participantsCount Number of participants.
+     * @param int|null    $ownerId           User ID of the chat owner.
+     * @param bool        $isPublic          Whether the chat is publicly accessible.
+     */
     public function __construct(
-        public int     $chatId,
-        public string  $type,
-        public string  $status,
-        public ?string $title,
-        public ?int    $participantsCount,
-        public ?int    $ownerId,
-        public bool    $isPublic,
+        public readonly int     $chatId,
+        public readonly string  $type,
+        public readonly string  $status,
+        public readonly ?string $title,
+        public readonly ?int    $participantsCount,
+        public readonly ?int    $ownerId,
+        public readonly bool    $isPublic,
     ) {}
 
+    /**
+     * @param array<string, mixed> $d Raw API response data.
+     */
     public static function fromArray(array $d): self
     {
         return new self(

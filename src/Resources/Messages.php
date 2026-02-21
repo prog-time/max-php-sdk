@@ -5,15 +5,32 @@ declare(strict_types=1);
 namespace MaxBotApi\Resources;
 
 use MaxBotApi\DTO\Message;
+use MaxBotApi\Exceptions\ApiException;
+use MaxBotApi\Exceptions\NetworkException;
+use MaxBotApi\Exceptions\RateLimitException;
 use MaxBotApi\Http\HttpClient;
 
+/**
+ * Resource for message endpoints.
+ */
 final class Messages
 {
-    public function __construct(private HttpClient $http) {}
+    public function __construct(private readonly HttpClient $http) {}
 
     /**
-     * Send a message to a chat or a user.
-     * Either chat_id or user_id must be provided.
+     * Send a text message to a chat or a user.
+     * Either $chatId or $userId must be provided.
+     *
+     * @param string      $text                Message text.
+     * @param int|null    $chatId              Target chat ID.
+     * @param int|null    $userId              Target user ID (for direct messages).
+     * @param string|null $format              Text format: 'markdown' or 'html'.
+     * @param bool        $notify              Whether to send a push notification to recipients.
+     * @param bool        $disableLinkPreview  Whether to disable link previews in the message.
+     *
+     * @throws RateLimitException On HTTP 429 Too Many Requests.
+     * @throws ApiException       On HTTP 4xx or 5xx error response.
+     * @throws NetworkException   On connection failure or timeout.
      */
     public function send(
         string  $text,
@@ -45,9 +62,19 @@ final class Messages
 
     /**
      * Get messages from a chat.
-     * Either chat_id or message_ids must be provided.
+     * Either $chatId or $messageIds must be provided.
+     *
+     * @param int|null    $chatId     Chat to load messages from.
+     * @param string|null $messageIds Comma-separated list of specific message IDs.
+     * @param int|null    $from       Lower bound of the time range (Unix ms).
+     * @param int|null    $to         Upper bound of the time range (Unix ms).
+     * @param int         $count      Maximum number of messages to return.
      *
      * @return Message[]
+     *
+     * @throws RateLimitException On HTTP 429 Too Many Requests.
+     * @throws ApiException       On HTTP 4xx or 5xx error response.
+     * @throws NetworkException   On connection failure or timeout.
      */
     public function list(
         ?int    $chatId = null,
@@ -68,12 +95,18 @@ final class Messages
 
         return array_map(
             static fn(array $m) => Message::fromArray($m),
-            $data['messages'] ?? []
+            $data['messages'] ?? [],
         );
     }
 
     /**
-     * Get a message by its ID.
+     * Get a single message by its ID.
+     *
+     * @param string $messageId Unique message identifier.
+     *
+     * @throws RateLimitException On HTTP 429 Too Many Requests.
+     * @throws ApiException       On HTTP 4xx or 5xx error response.
+     * @throws NetworkException   On connection failure or timeout.
      */
     public function get(string $messageId): Message
     {
@@ -84,6 +117,15 @@ final class Messages
 
     /**
      * Edit a message (only messages sent within the last 24 hours can be edited).
+     *
+     * @param string      $messageId Unique identifier of the message to edit.
+     * @param string|null $text      New text content.
+     * @param string|null $format    Text format: 'markdown' or 'html'.
+     * @param bool        $notify    Whether to send an edit notification to recipients.
+     *
+     * @throws RateLimitException On HTTP 429 Too Many Requests.
+     * @throws ApiException       On HTTP 4xx or 5xx error response.
+     * @throws NetworkException   On connection failure or timeout.
      */
     public function edit(
         string  $messageId,
@@ -110,6 +152,12 @@ final class Messages
 
     /**
      * Delete a message (only messages sent within the last 24 hours can be deleted).
+     *
+     * @param string $messageId Unique identifier of the message to delete.
+     *
+     * @throws RateLimitException On HTTP 429 Too Many Requests.
+     * @throws ApiException       On HTTP 4xx or 5xx error response.
+     * @throws NetworkException   On connection failure or timeout.
      */
     public function delete(string $messageId): bool
     {
@@ -119,9 +167,15 @@ final class Messages
     }
 
     /**
-     * Answer a callback triggered by an inline button press.
+     * Respond to a callback triggered by an inline keyboard button press.
      *
-     * @param string|null $notification Toast notification text shown to the user
+     * @param string                    $callbackId  Callback identifier from the update payload.
+     * @param array<string, mixed>|null $message     Optional message to send in response.
+     * @param string|null               $notification Toast notification text shown to the user.
+     *
+     * @throws RateLimitException On HTTP 429 Too Many Requests.
+     * @throws ApiException       On HTTP 4xx or 5xx error response.
+     * @throws NetworkException   On connection failure or timeout.
      */
     public function answerCallback(
         string  $callbackId,

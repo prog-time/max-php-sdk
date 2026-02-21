@@ -12,6 +12,13 @@ use MaxBotApi\Resources\Messages;
 use MaxBotApi\Resources\Subscriptions;
 use MaxBotApi\Resources\Uploads;
 
+/**
+ * Main entry point for the Max Bot API SDK.
+ *
+ * Usage:
+ *   $client = new MaxClient(new Config('your-token'));
+ *   $bot    = $client->bot->me();
+ */
 final class MaxClient
 {
     public Bot           $bot;
@@ -21,6 +28,9 @@ final class MaxClient
     public Subscriptions $subscriptions;
     public Uploads       $uploads;
 
+    /**
+     * @param Config $config SDK configuration containing the bot token and base URL.
+     */
     public function __construct(Config $config)
     {
         $http = new HttpClient($config);

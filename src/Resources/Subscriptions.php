@@ -6,16 +6,26 @@ namespace MaxBotApi\Resources;
 
 use MaxBotApi\DTO\Subscription;
 use MaxBotApi\DTO\Update;
+use MaxBotApi\Exceptions\ApiException;
+use MaxBotApi\Exceptions\NetworkException;
+use MaxBotApi\Exceptions\RateLimitException;
 use MaxBotApi\Http\HttpClient;
 
+/**
+ * Resource for webhook subscription and long-polling update endpoints.
+ */
 final class Subscriptions
 {
-    public function __construct(private HttpClient $http) {}
+    public function __construct(private readonly HttpClient $http) {}
 
     /**
-     * Get a list of active webhook subscriptions.
+     * Get a list of active webhook subscriptions for this bot.
      *
      * @return Subscription[]
+     *
+     * @throws RateLimitException On HTTP 429 Too Many Requests.
+     * @throws ApiException       On HTTP 4xx or 5xx error response.
+     * @throws NetworkException   On connection failure or timeout.
      */
     public function list(): array
     {
@@ -23,15 +33,21 @@ final class Subscriptions
 
         return array_map(
             static fn(array $s) => Subscription::fromArray($s),
-            $data['subscriptions'] ?? []
+            $data['subscriptions'] ?? [],
         );
     }
 
     /**
-     * Subscribe to updates via webhook.
-     * The server must listen on ports: 80, 8080, 443, 8443 or 16384–32383.
+     * Subscribe the bot to updates via webhook.
+     * The webhook server must listen on one of the allowed ports: 80, 8080, 443, 8443, or 16384–32383.
      *
-     * @param string[] $updateTypes Event types to receive: message_created, bot_started, etc.
+     * @param string   $url         Public HTTPS URL of the webhook endpoint.
+     * @param string[] $updateTypes Event types to receive; empty means all types.
+     * @param string|null $secret   Optional secret verified via the X-Max-Bot-Api-Secret header.
+     *
+     * @throws RateLimitException On HTTP 429 Too Many Requests.
+     * @throws ApiException       On HTTP 4xx or 5xx error response.
+     * @throws NetworkException   On connection failure or timeout.
      */
     public function subscribe(string $url, array $updateTypes = [], ?string $secret = null): bool
     {
@@ -50,7 +66,11 @@ final class Subscriptions
     }
 
     /**
-     * Unsubscribe from webhook.
+     * Remove the active webhook subscription.
+     *
+     * @throws RateLimitException On HTTP 429 Too Many Requests.
+     * @throws ApiException       On HTTP 4xx or 5xx error response.
+     * @throws NetworkException   On connection failure or timeout.
      */
     public function unsubscribe(): bool
     {
@@ -60,16 +80,25 @@ final class Subscriptions
     }
 
     /**
-     * Fetch updates via long polling (development only, use webhooks in production).
+     * Fetch pending updates via long polling.
+     * Intended for development only — use webhooks in production.
      *
-     * @param string[] $types Filter by update types
+     * @param int      $limit   Maximum number of updates to return (1–100).
+     * @param int      $timeout Long-polling timeout in seconds.
+     * @param int|null $marker  Pagination cursor from the previous response.
+     * @param string[] $types   Filter updates by event type; empty means all types.
+     *
      * @return Update[]
+     *
+     * @throws RateLimitException On HTTP 429 Too Many Requests.
+     * @throws ApiException       On HTTP 4xx or 5xx error response.
+     * @throws NetworkException   On connection failure or timeout.
      */
     public function getUpdates(
-        int     $limit = 100,
-        int     $timeout = 30,
-        ?int    $marker = null,
-        array   $types = [],
+        int   $limit = 100,
+        int   $timeout = 30,
+        ?int  $marker = null,
+        array $types = [],
     ): array {
         $query = array_filter([
             'limit'   => $limit !== 100 ? $limit : null,
@@ -82,7 +111,7 @@ final class Subscriptions
 
         return array_map(
             static fn(array $u) => Update::fromArray($u),
-            $data['updates'] ?? []
+            $data['updates'] ?? [],
         );
     }
 }

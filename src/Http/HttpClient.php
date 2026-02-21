@@ -11,11 +11,17 @@ use MaxBotApi\Exceptions\ApiException;
 use MaxBotApi\Exceptions\NetworkException;
 use MaxBotApi\Exceptions\RateLimitException;
 
+/**
+ * HTTP client wrapping Guzzle for communication with the Max Bot API.
+ */
 final class HttpClient
 {
     private Client $client;
 
-    public function __construct(private Config $config)
+    /**
+     * @param Config $config SDK configuration used to initialise the Guzzle client.
+     */
+    public function __construct(private readonly Config $config)
     {
         $this->client = new Client([
             'base_uri'    => $config->baseUrl,
@@ -25,9 +31,18 @@ final class HttpClient
     }
 
     /**
-     * @param array<string, mixed> $body  JSON body (POST/PUT/PATCH)
-     * @param array<string, mixed> $query URL query parameters
+     * Send an HTTP request to the Max API and return the decoded JSON response.
+     *
+     * @param string               $method HTTP method: GET, POST, PUT, PATCH, DELETE.
+     * @param string               $uri    API endpoint path, e.g. '/messages'.
+     * @param array<string, mixed> $body   JSON request body, used for POST / PUT / PATCH.
+     * @param array<string, mixed> $query  URL query string parameters.
+     *
      * @return array<string, mixed>
+     *
+     * @throws RateLimitException On HTTP 429 Too Many Requests.
+     * @throws ApiException       On HTTP 4xx or 5xx error response.
+     * @throws NetworkException   On connection failure, timeout, or DNS error.
      */
     public function request(string $method, string $uri, array $body = [], array $query = []): array
     {
@@ -58,7 +73,7 @@ final class HttpClient
         if ($status === 429) {
             $retryAfter = $res->getHeaderLine('Retry-After');
             throw new RateLimitException(
-                retryAfter: $retryAfter !== '' ? (int) $retryAfter : null
+                retryAfter: $retryAfter !== '' ? (int) $retryAfter : null,
             );
         }
 
