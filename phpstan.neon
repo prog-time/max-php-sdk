@@ -1,0 +1,26 @@
+parameters:
+    level: 8
+    paths:
+        - src
+        - tests
+    excludePaths:
+        - vendor
+
+    checkMissingVarTagTypehint: true
+    inferPrivatePropertyTypeFromConstructor: true
+
+    reportUnmatchedIgnoredErrors: false
+
+    # PHPUnit mocks of final classes are not resolvable by PHPStan.
+    # dg/bypass-finals removes the `final` keyword at runtime, but PHPStan
+    # analyses the original source and considers MockObject&FinalClass impossible.
+    ignoreErrors:
+        -
+            message: '#contains unresolvable type#'
+            path: tests/*
+        -
+            message: '#Call to an undefined method MaxBotApi\\Http\\HttpClient::#'
+            path: tests/*
+
+includes:
+    - vendor/phpstan/phpstan/conf/bleedingEdge.neon

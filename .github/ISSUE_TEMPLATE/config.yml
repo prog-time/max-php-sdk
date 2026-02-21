@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Max Bot API documentation
+    url: https://dev.max.ru/docs
+    about: Official Max Bot API reference

@@ -8,3 +8,6 @@
 *.log
 .env
 .env.*
+
+.phpunit.result.cache
+.phpstan-error-count.json

@@ -1,0 +1,24 @@
+name: Question
+description: Ask a question about using the SDK
+labels: ["question"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before asking, please check the [README](https://github.com/prog-time/max-php-sdk#readme) and existing issues.
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: What would you like to know?
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: What have you tried?
+      description: Share any code you've already tried or docs you've consulted.
+      render: php
