@@ -168,13 +168,85 @@ foreach ($updates as $update) {
 
 ### Uploads
 
+**Send an image**
+
 ```php
 use MaxBotApi\Resources\Uploads;
 
-$result = $client->uploads->getUploadUrl(Uploads::TYPE_IMAGE);
+$token = $client->uploads->uploadFile('/path/to/photo.jpg', Uploads::TYPE_IMAGE);
 
-// $result->url   — upload the file here with a separate HTTP PUT/POST request
-// $result->token — use this token when sending a message with an attachment
+$client->messages->send(
+    text:        'Here is your image!',
+    chatId:      123456789,
+    attachments: [
+        ['type' => 'image', 'payload' => ['token' => $token]],
+    ],
+);
+```
+
+**Send a file (PDF, ZIP, DOCX, …)**
+
+```php
+$token = $client->uploads->uploadFile('/path/to/document.pdf', Uploads::TYPE_FILE);
+
+$client->messages->send(
+    text:        'Here is the document.',
+    chatId:      123456789,
+    attachments: [
+        ['type' => 'file', 'payload' => ['token' => $token]],
+    ],
+);
+```
+
+**Send a video or audio**
+
+For video and audio, the server processes the file asynchronously. If you send the message too quickly you will receive an `attachment.not.ready` error — use exponential back-off:
+
+```php
+$token = $client->uploads->uploadFile('/path/to/movie.mp4', Uploads::TYPE_VIDEO);
+
+$delay    = 2;
+$maxTries = 5;
+
+for ($attempt = 1; $attempt <= $maxTries; $attempt++) {
+    try {
+        $client->messages->send(
+            text:        'Check out this video!',
+            chatId:      123456789,
+            attachments: [
+                ['type' => 'video', 'payload' => ['token' => $token]],
+            ],
+        );
+        break;
+    } catch (\MaxBotApi\Exceptions\ApiException $e) {
+        if ($e->getMessage() === 'attachment.not.ready' && $attempt < $maxTries) {
+            sleep($delay);
+            $delay *= 2;
+        } else {
+            throw $e;
+        }
+    }
+}
+```
+
+**Send multiple images at once**
+
+```php
+$attachments = [];
+foreach (['/path/photo1.jpg', '/path/photo2.jpg'] as $path) {
+    $token         = $client->uploads->uploadFile($path, Uploads::TYPE_IMAGE);
+    $attachments[] = ['type' => 'image', 'payload' => ['token' => $token]];
+}
+
+$client->messages->send(text: 'Here are the photos!', chatId: 123456789, attachments: $attachments);
+```
+
+**Low-level: get the upload URL only**
+
+```php
+$result = $client->uploads->getUploadUrl(Uploads::TYPE_IMAGE);
+// $result->url   — upload the file here with your own HTTP client
+// $result->token — for video/audio: use this as the attachment token
 ```
 
 Available types: `Uploads::TYPE_IMAGE`, `TYPE_VIDEO`, `TYPE_AUDIO`, `TYPE_FILE`.
