@@ -29,6 +29,10 @@ final class MessagesTest extends TestCase
         ];
     }
 
+    // -------------------------------------------------------------------------
+    // send()
+    // -------------------------------------------------------------------------
+
     public function testSendWithChatId(): void
     {
         $http = $this->mockHttp();
@@ -89,6 +93,153 @@ final class MessagesTest extends TestCase
         (new Messages($http))->send('No preview', chatId: 1, disableLinkPreview: true);
     }
 
+    public function testSendWithSingleImageAttachment(): void
+    {
+        $http = $this->mockHttp();
+
+        $attachments = [
+            ['type' => 'image', 'payload' => ['token' => 'img-token-abc']],
+        ];
+
+        $http->expects($this->once())
+            ->method('request')
+            ->with(
+                'POST',
+                '/messages',
+                ['text' => 'Here is your image!', 'attachments' => $attachments],
+                ['chat_id' => 55],
+            )
+            ->willReturn($this->messageResponse());
+
+        $result = (new Messages($http))->send('Here is your image!', chatId: 55, attachments: $attachments);
+
+        $this->assertInstanceOf(Message::class, $result);
+    }
+
+    public function testSendWithVideoAttachment(): void
+    {
+        $http = $this->mockHttp();
+
+        $attachments = [
+            ['type' => 'video', 'payload' => ['token' => 'vid-token-xyz']],
+        ];
+
+        $http->expects($this->once())
+            ->method('request')
+            ->with(
+                'POST',
+                '/messages',
+                ['text' => 'Watch this!', 'attachments' => $attachments],
+                ['chat_id' => 1],
+            )
+            ->willReturn($this->messageResponse());
+
+        (new Messages($http))->send('Watch this!', chatId: 1, attachments: $attachments);
+    }
+
+    public function testSendWithAudioAttachment(): void
+    {
+        $http = $this->mockHttp();
+
+        $attachments = [
+            ['type' => 'audio', 'payload' => ['token' => 'aud-token-xyz']],
+        ];
+
+        $http->expects($this->once())
+            ->method('request')
+            ->with(
+                'POST',
+                '/messages',
+                ['text' => 'Listen!', 'attachments' => $attachments],
+                ['chat_id' => 1],
+            )
+            ->willReturn($this->messageResponse());
+
+        (new Messages($http))->send('Listen!', chatId: 1, attachments: $attachments);
+    }
+
+    public function testSendWithFileAttachment(): void
+    {
+        $http = $this->mockHttp();
+
+        $attachments = [
+            ['type' => 'file', 'payload' => ['token' => 'file-token-xyz']],
+        ];
+
+        $http->expects($this->once())
+            ->method('request')
+            ->with(
+                'POST',
+                '/messages',
+                ['text' => 'Here is the doc.', 'attachments' => $attachments],
+                ['chat_id' => 1],
+            )
+            ->willReturn($this->messageResponse());
+
+        (new Messages($http))->send('Here is the doc.', chatId: 1, attachments: $attachments);
+    }
+
+    public function testSendWithMultipleAttachments(): void
+    {
+        $http = $this->mockHttp();
+
+        $attachments = [
+            ['type' => 'image', 'payload' => ['token' => 'tok-1']],
+            ['type' => 'image', 'payload' => ['token' => 'tok-2']],
+            ['type' => 'image', 'payload' => ['token' => 'tok-3']],
+        ];
+
+        $http->expects($this->once())
+            ->method('request')
+            ->with(
+                'POST',
+                '/messages',
+                ['text' => 'Photos!', 'attachments' => $attachments],
+                ['chat_id' => 1],
+            )
+            ->willReturn($this->messageResponse());
+
+        (new Messages($http))->send('Photos!', chatId: 1, attachments: $attachments);
+    }
+
+    public function testSendNullAttachmentsNotIncludedInBody(): void
+    {
+        $http = $this->mockHttp();
+
+        // attachments key must NOT be present in the body when null
+        $http->expects($this->once())
+            ->method('request')
+            ->with('POST', '/messages', ['text' => 'Hello'], ['chat_id' => 1])
+            ->willReturn($this->messageResponse());
+
+        (new Messages($http))->send('Hello', chatId: 1, attachments: null);
+    }
+
+    public function testSendWithAttachmentsAndFormat(): void
+    {
+        $http = $this->mockHttp();
+
+        $attachments = [
+            ['type' => 'image', 'payload' => ['token' => 'img-tok']],
+        ];
+
+        $http->expects($this->once())
+            ->method('request')
+            ->with(
+                'POST',
+                '/messages',
+                ['text' => '**caption**', 'format' => 'markdown', 'attachments' => $attachments],
+                ['chat_id' => 1],
+            )
+            ->willReturn($this->messageResponse());
+
+        (new Messages($http))->send('**caption**', chatId: 1, format: 'markdown', attachments: $attachments);
+    }
+
+    // -------------------------------------------------------------------------
+    // list()
+    // -------------------------------------------------------------------------
+
     public function testListReturnsMappedMessages(): void
     {
         $http = $this->mockHttp();
@@ -140,6 +291,10 @@ final class MessagesTest extends TestCase
         $this->assertSame([], (new Messages($http))->list(chatId: 1));
     }
 
+    // -------------------------------------------------------------------------
+    // get()
+    // -------------------------------------------------------------------------
+
     public function testGetSingleMessage(): void
     {
         $http = $this->mockHttp();
@@ -153,6 +308,10 @@ final class MessagesTest extends TestCase
         $this->assertInstanceOf(Message::class, $msg);
         $this->assertSame('msg-99', $msg->messageId);
     }
+
+    // -------------------------------------------------------------------------
+    // edit()
+    // -------------------------------------------------------------------------
 
     public function testEditReturnsTrueOnSuccess(): void
     {
@@ -184,6 +343,10 @@ final class MessagesTest extends TestCase
         (new Messages($http))->edit('m', 'Upd', format: 'html', notify: false);
     }
 
+    // -------------------------------------------------------------------------
+    // delete()
+    // -------------------------------------------------------------------------
+
     public function testDeleteReturnsTrueOnSuccess(): void
     {
         $http = $this->mockHttp();
@@ -194,6 +357,10 @@ final class MessagesTest extends TestCase
 
         $this->assertTrue((new Messages($http))->delete('msg-1'));
     }
+
+    // -------------------------------------------------------------------------
+    // answerCallback()
+    // -------------------------------------------------------------------------
 
     public function testAnswerCallbackMinimal(): void
     {

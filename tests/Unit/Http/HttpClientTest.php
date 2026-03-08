@@ -39,6 +39,23 @@ final class HttpClientTest extends TestCase
         return $http;
     }
 
+    private function makeTempFile(string $content = 'fake file content'): string
+    {
+        $path = tempnam(sys_get_temp_dir(), 'max_sdk_test_');
+
+        if ($path === false) {
+            $this->fail('Could not create temporary file');
+        }
+
+        file_put_contents($path, $content);
+
+        return $path;
+    }
+
+    // -------------------------------------------------------------------------
+    // request()
+    // -------------------------------------------------------------------------
+
     public function testSuccessfulGetRequestReturnsDecodedJson(): void
     {
         $http = $this->makeClient([
@@ -191,5 +208,70 @@ final class HttpClientTest extends TestCase
 
         $this->assertNotNull($capturedRequest);
         $this->assertSame('Bearer my-test-token', $capturedRequest->getHeaderLine('Authorization'));
+    }
+
+    // -------------------------------------------------------------------------
+    // uploadMultipart()
+    // -------------------------------------------------------------------------
+
+    public function testUploadMultipartSuccessReturnsDecodedJson(): void
+    {
+        $tmpFile = $this->makeTempFile('fake image content');
+
+        $http = $this->makeClient([
+            new Response(200, [], (string) json_encode(['token' => 'cdn-token-abc'])),
+        ]);
+
+        $result = $http->uploadMultipart('https://cdn.example.com/upload', $tmpFile);
+
+        unlink($tmpFile);
+
+        $this->assertSame('cdn-token-abc', $result['token']);
+    }
+
+    public function testUploadMultipartEmptyResponseBodyReturnsEmptyArray(): void
+    {
+        $tmpFile = $this->makeTempFile();
+
+        $http = $this->makeClient([new Response(200, [], '')]);
+
+        $result = $http->uploadMultipart('https://cdn.example.com/upload', $tmpFile);
+
+        unlink($tmpFile);
+
+        $this->assertSame([], $result);
+    }
+
+    public function testUploadMultipartReturnsFullCdnResponse(): void
+    {
+        $tmpFile = $this->makeTempFile('video content');
+
+        $cdnPayload = ['token' => 'vid-tok', 'duration' => 120, 'size' => 2048];
+        $http = $this->makeClient([
+            new Response(200, [], (string) json_encode($cdnPayload)),
+        ]);
+
+        $result = $http->uploadMultipart('https://vu.mycdn.me/upload.do', $tmpFile);
+
+        unlink($tmpFile);
+
+        $this->assertSame('vid-tok', $result['token']);
+        $this->assertSame(120, $result['duration']);
+    }
+
+    public function testUploadMultipartNetworkErrorThrowsNetworkException(): void
+    {
+        $tmpFile = $this->makeTempFile();
+
+        $http = $this->makeClient([
+            new ConnectException('Connection failed', new Request('POST', 'https://cdn.example.com/upload')),
+        ]);
+
+        try {
+            $this->expectException(NetworkException::class);
+            $http->uploadMultipart('https://cdn.example.com/upload', $tmpFile);
+        } finally {
+            unlink($tmpFile);
+        }
     }
 }
