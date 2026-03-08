@@ -83,4 +83,37 @@ final class HttpClient
 
         return $data;
     }
+
+    /**
+     * Upload a local file to an external pre-signed URL using multipart/form-data.
+     *
+     * Used internally by Uploads::uploadFile() to send the file to the CDN.
+     *
+     * @param string $url      Pre-signed upload URL (e.g. from Max media CDN).
+     * @param string $filePath Absolute or relative path to the file on disk.
+     *
+     * @return array<string, mixed> Decoded JSON response from the CDN.
+     *
+     * @throws NetworkException On connection failure or timeout.
+     */
+    public function uploadMultipart(string $url, string $filePath): array
+    {
+        $options = [
+            'multipart' => [
+                [
+                    'name'     => 'data',
+                    'contents' => fopen($filePath, 'r'),
+                    'filename' => basename($filePath),
+                ],
+            ],
+        ];
+
+        try {
+            $res = $this->client->post($url, $options);
+        } catch (GuzzleException $e) {
+            throw new NetworkException($e->getMessage(), 0, $e);
+        }
+
+        return json_decode($res->getBody()->getContents(), true) ?? [];
+    }
 }

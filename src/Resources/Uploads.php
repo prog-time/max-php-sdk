@@ -40,4 +40,44 @@ final class Uploads
 
         return UploadResult::fromArray($data);
     }
+
+    /**
+     * Upload a local file and return the attachment token for use in a message.
+     *
+     * This method handles the full two-step process:
+     *   1. Request a pre-signed upload URL from the Max API.
+     *   2. Upload the file to that URL via multipart/form-data.
+     *
+     * Token sources differ by type:
+     *   - image / file : token is returned in the CDN upload response.
+     *   - video / audio: token is returned by the initial /uploads request
+     *                    and becomes usable after the upload completes.
+     *
+     * @param string $filePath Absolute or relative path to the file on disk.
+     * @param string $type     File type. Use one of the TYPE_* constants.
+     *
+     * @throws \RuntimeException  If no token is found in the API responses.
+     * @throws RateLimitException On HTTP 429 Too Many Requests.
+     * @throws ApiException       On HTTP 4xx or 5xx error response.
+     * @throws NetworkException   On connection failure or timeout.
+     */
+    public function uploadFile(string $filePath, string $type = self::TYPE_FILE): string
+    {
+        $uploadResult = $this->getUploadUrl($type);
+
+        // Upload the file to the pre-signed CDN URL.
+        $cdnResponse = $this->http->uploadMultipart($uploadResult->url, $filePath);
+
+        // video / audio: token comes from the /uploads response.
+        // image / file:  token comes from the CDN upload response.
+        $token = $uploadResult->token ?? $cdnResponse['token'] ?? null;
+
+        if ($token === null) {
+            throw new \RuntimeException(
+                'No attachment token received. CDN response: ' . json_encode($cdnResponse)
+            );
+        }
+
+        return $token;
+    }
 }

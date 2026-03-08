@@ -21,12 +21,15 @@ final class Messages
      * Send a text message to a chat or a user.
      * Either $chatId or $userId must be provided.
      *
-     * @param string      $text                Message text.
-     * @param int|null    $chatId              Target chat ID.
-     * @param int|null    $userId              Target user ID (for direct messages).
-     * @param string|null $format              Text format: 'markdown' or 'html'.
-     * @param bool        $notify              Whether to send a push notification to recipients.
-     * @param bool        $disableLinkPreview  Whether to disable link previews in the message.
+     * @param string                        $text                Message text.
+     * @param int|null                      $chatId              Target chat ID.
+     * @param int|null                      $userId              Target user ID (for direct messages).
+     * @param string|null                   $format              Text format: 'markdown' or 'html'.
+     * @param bool                          $notify              Whether to send a push notification to recipients.
+     * @param bool                          $disableLinkPreview  Whether to disable link previews in the message.
+     * @param array<int, array<string, mixed>>|null $attachments Media attachments. Each item must have
+     *                                                           'type' (image|video|audio|file) and
+     *                                                           'payload' with a 'token' key.
      *
      * @throws RateLimitException On HTTP 429 Too Many Requests.
      * @throws ApiException       On HTTP 4xx or 5xx error response.
@@ -39,6 +42,7 @@ final class Messages
         ?string $format = null,
         bool    $notify = true,
         bool    $disableLinkPreview = false,
+        ?array  $attachments = null,
     ): Message {
         $query = array_filter([
             'chat_id'              => $chatId,
@@ -53,6 +57,9 @@ final class Messages
         }
         if (!$notify) {
             $body['notify'] = false;
+        }
+        if ($attachments !== null) {
+            $body['attachments'] = $attachments;
         }
 
         $data = $this->http->request('POST', '/messages', $body, $query);
