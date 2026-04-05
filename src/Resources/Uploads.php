@@ -69,8 +69,13 @@ final class Uploads
         $cdnResponse = $this->http->uploadMultipart($uploadResult->url, $filePath);
 
         // video / audio: token comes from the /uploads response.
-        // image / file:  token comes from the CDN upload response.
-        $token = $uploadResult->token ?? $cdnResponse['token'] ?? null;
+        // image:         CDN returns {"photos":{"<key>":{"token":"..."}}}
+        // file:          CDN returns {"token":"..."} directly.
+        $cdnToken = $cdnResponse['token']
+            ?? (isset($cdnResponse['photos']) ? reset($cdnResponse['photos'])['token'] ?? null : null)
+            ?? null;
+
+        $token = $uploadResult->token ?? $cdnToken ?? null;
 
         if ($token === null) {
             throw new \RuntimeException(
