@@ -125,10 +125,12 @@ final class Messages
     /**
      * Edit a message (only messages sent within the last 24 hours can be edited).
      *
-     * @param string      $messageId Unique identifier of the message to edit.
-     * @param string|null $text      New text content.
-     * @param string|null $format    Text format: 'markdown' or 'html'.
-     * @param bool        $notify    Whether to send an edit notification to recipients.
+     * @param string      $messageId   Unique identifier of the message to edit.
+     * @param string|null $text        New text content.
+     * @param string|null $format      Text format: 'markdown' or 'html'.
+     * @param bool        $notify      Whether to send an edit notification to recipients.
+     * @param array<int, array<string, mixed>>|null $attachments New attachments. Pass an empty array ([])
+     *                                              to remove all existing attachments and inline keyboards.
      *
      * @throws RateLimitException On HTTP 429 Too Many Requests.
      * @throws ApiException       On HTTP 4xx or 5xx error response.
@@ -139,6 +141,7 @@ final class Messages
         ?string $text = null,
         ?string $format = null,
         bool    $notify = true,
+        ?array  $attachments = null,
     ): bool {
         $body = [];
 
@@ -150,6 +153,9 @@ final class Messages
         }
         if (!$notify) {
             $body['notify'] = false;
+        }
+        if ($attachments !== null) {
+            $body['attachments'] = $attachments;
         }
 
         $data = $this->http->request('PUT', '/messages', $body, ['message_id' => $messageId]);

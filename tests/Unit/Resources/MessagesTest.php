@@ -343,6 +343,51 @@ final class MessagesTest extends TestCase
         (new Messages($http))->edit('m', 'Upd', format: 'html', notify: false);
     }
 
+    public function testEditWithNullAttachmentsDoesNotIncludeKeyInBody(): void
+    {
+        $http = $this->mockHttp();
+        // 'attachments' must NOT appear in the body when null (backward compat)
+        $http->expects($this->once())
+            ->method('request')
+            ->with('PUT', '/messages', ['text' => 'Hello'], ['message_id' => 'msg-1'])
+            ->willReturn(['success' => true]);
+
+        (new Messages($http))->edit('msg-1', 'Hello', attachments: null);
+    }
+
+    public function testEditWithEmptyAttachmentsSendsEmptyArrayToRemoveKeyboard(): void
+    {
+        $http = $this->mockHttp();
+        // Empty array must be sent explicitly so the API removes attachments/keyboard
+        $http->expects($this->once())
+            ->method('request')
+            ->with('PUT', '/messages', ['text' => 'Меню закрыто.', 'attachments' => []], ['message_id' => 'msg-1'])
+            ->willReturn(['success' => true]);
+
+        $this->assertTrue((new Messages($http))->edit('msg-1', 'Меню закрыто.', attachments: []));
+    }
+
+    public function testEditWithAttachmentsReplacesExisting(): void
+    {
+        $http = $this->mockHttp();
+
+        $attachments = [
+            ['type' => 'image', 'payload' => ['token' => 'new-img-tok']],
+        ];
+
+        $http->expects($this->once())
+            ->method('request')
+            ->with(
+                'PUT',
+                '/messages',
+                ['text' => 'Updated', 'attachments' => $attachments],
+                ['message_id' => 'msg-5'],
+            )
+            ->willReturn(['success' => true]);
+
+        $this->assertTrue((new Messages($http))->edit('msg-5', 'Updated', attachments: $attachments));
+    }
+
     // -------------------------------------------------------------------------
     // delete()
     // -------------------------------------------------------------------------

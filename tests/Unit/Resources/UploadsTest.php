@@ -103,6 +103,24 @@ final class UploadsTest extends TestCase
         $this->assertSame('img-token-abc', $token);
     }
 
+    public function testUploadFileForImageUsesTokenFromPhotosNestedCdnResponse(): void
+    {
+        // Real Max CDN response for images:
+        // {"photos":{"<opaque-key>":{"token":"actual-token"}}}
+        $http = $this->mockHttp();
+
+        $http->method('request')->willReturn(['url' => 'https://cdn.example.com/upload']);
+        $http->method('uploadMultipart')->willReturn([
+            'photos' => [
+                'opaque-cdn-key==' => ['token' => 'nested-img-token'],
+            ],
+        ]);
+
+        $token = (new Uploads($http))->uploadFile('/tmp/photo.png', Uploads::TYPE_IMAGE);
+
+        $this->assertSame('nested-img-token', $token);
+    }
+
     public function testUploadFileForFileTypeUsesTokenFromCdnResponse(): void
     {
         $http = $this->mockHttp();
