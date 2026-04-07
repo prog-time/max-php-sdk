@@ -160,7 +160,7 @@ final class Messages
 
         $data = $this->http->request('PUT', '/messages', $body, ['message_id' => $messageId]);
 
-        return Message::fromArray($data['message']);
+        return Message::fromArray($data);
     }
 
     /**

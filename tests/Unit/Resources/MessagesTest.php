@@ -20,12 +20,18 @@ final class MessagesTest extends TestCase
     private function messageResponse(string $mid = 'msg-1', string $text = 'Hello'): array
     {
         return [
-            'message' => [
-                'body'      => ['mid' => $mid, 'text' => $text],
-                'timestamp' => 1700000000000,
-                'sender'    => ['user_id' => 10],
-                'recipient' => ['chat_id' => 20],
-            ],
+            'message' => $this->flatMessageResponse($mid, $text),
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function flatMessageResponse(string $mid = 'msg-1', string $text = 'Hello'): array
+    {
+        return [
+            'body'      => ['mid' => $mid, 'text' => $text],
+            'timestamp' => 1700000000000,
+            'sender'    => ['user_id' => 10],
+            'recipient' => ['chat_id' => 20],
         ];
     }
 
@@ -319,7 +325,7 @@ final class MessagesTest extends TestCase
         $http->expects($this->once())
             ->method('request')
             ->with('PUT', '/messages', ['text' => 'Edited'], ['message_id' => 'msg-1'])
-            ->willReturn($this->messageResponse('msg-1', 'Edited'));
+            ->willReturn($this->flatMessageResponse('msg-1', 'Edited'));
 
         $result = (new Messages($http))->edit('msg-1', 'Edited');
 
@@ -333,7 +339,7 @@ final class MessagesTest extends TestCase
         $http->expects($this->once())
             ->method('request')
             ->with('PUT', '/messages', ['text' => 'Upd', 'format' => 'html', 'notify' => false], ['message_id' => 'm'])
-            ->willReturn($this->messageResponse('m', 'Upd'));
+            ->willReturn($this->flatMessageResponse('m', 'Upd'));
 
         $this->assertInstanceOf(Message::class, (new Messages($http))->edit('m', 'Upd', format: 'html', notify: false));
     }
@@ -345,7 +351,7 @@ final class MessagesTest extends TestCase
         $http->expects($this->once())
             ->method('request')
             ->with('PUT', '/messages', ['text' => 'Hello'], ['message_id' => 'msg-1'])
-            ->willReturn($this->messageResponse());
+            ->willReturn($this->flatMessageResponse());
 
         (new Messages($http))->edit('msg-1', 'Hello', attachments: null);
     }
@@ -357,7 +363,7 @@ final class MessagesTest extends TestCase
         $http->expects($this->once())
             ->method('request')
             ->with('PUT', '/messages', ['text' => 'Меню закрыто.', 'attachments' => []], ['message_id' => 'msg-1'])
-            ->willReturn($this->messageResponse());
+            ->willReturn($this->flatMessageResponse());
 
         $this->assertInstanceOf(Message::class, (new Messages($http))->edit('msg-1', 'Меню закрыто.', attachments: []));
     }
@@ -378,7 +384,7 @@ final class MessagesTest extends TestCase
                 ['text' => 'Updated', 'attachments' => $attachments],
                 ['message_id' => 'msg-5'],
             )
-            ->willReturn($this->messageResponse('msg-5', 'Updated'));
+            ->willReturn($this->flatMessageResponse('msg-5', 'Updated'));
 
         $result = (new Messages($http))->edit('msg-5', 'Updated', attachments: $attachments);
         $this->assertInstanceOf(Message::class, $result);
