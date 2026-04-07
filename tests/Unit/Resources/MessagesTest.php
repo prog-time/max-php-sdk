@@ -313,23 +313,18 @@ final class MessagesTest extends TestCase
     // edit()
     // -------------------------------------------------------------------------
 
-    public function testEditReturnsTrueOnSuccess(): void
+    public function testEditReturnsMessage(): void
     {
         $http = $this->mockHttp();
         $http->expects($this->once())
             ->method('request')
             ->with('PUT', '/messages', ['text' => 'Edited'], ['message_id' => 'msg-1'])
-            ->willReturn(['success' => true]);
+            ->willReturn($this->messageResponse('msg-1', 'Edited'));
 
-        $this->assertTrue((new Messages($http))->edit('msg-1', 'Edited'));
-    }
+        $result = (new Messages($http))->edit('msg-1', 'Edited');
 
-    public function testEditReturnsFalseWhenSuccessIsMissing(): void
-    {
-        $http = $this->mockHttp();
-        $http->method('request')->willReturn([]);
-
-        $this->assertFalse((new Messages($http))->edit('msg-1', 'Edited'));
+        $this->assertInstanceOf(Message::class, $result);
+        $this->assertSame('msg-1', $result->messageId);
     }
 
     public function testEditWithFormatAndNotifyFalse(): void
@@ -338,19 +333,19 @@ final class MessagesTest extends TestCase
         $http->expects($this->once())
             ->method('request')
             ->with('PUT', '/messages', ['text' => 'Upd', 'format' => 'html', 'notify' => false], ['message_id' => 'm'])
-            ->willReturn(['success' => true]);
+            ->willReturn($this->messageResponse('m', 'Upd'));
 
-        (new Messages($http))->edit('m', 'Upd', format: 'html', notify: false);
+        $this->assertInstanceOf(Message::class, (new Messages($http))->edit('m', 'Upd', format: 'html', notify: false));
     }
 
     public function testEditWithNullAttachmentsDoesNotIncludeKeyInBody(): void
     {
         $http = $this->mockHttp();
-        // 'attachments' must NOT appear in the body when null (backward compat)
+        // 'attachments' must NOT appear in the body when null
         $http->expects($this->once())
             ->method('request')
             ->with('PUT', '/messages', ['text' => 'Hello'], ['message_id' => 'msg-1'])
-            ->willReturn(['success' => true]);
+            ->willReturn($this->messageResponse());
 
         (new Messages($http))->edit('msg-1', 'Hello', attachments: null);
     }
@@ -362,9 +357,9 @@ final class MessagesTest extends TestCase
         $http->expects($this->once())
             ->method('request')
             ->with('PUT', '/messages', ['text' => 'Меню закрыто.', 'attachments' => []], ['message_id' => 'msg-1'])
-            ->willReturn(['success' => true]);
+            ->willReturn($this->messageResponse());
 
-        $this->assertTrue((new Messages($http))->edit('msg-1', 'Меню закрыто.', attachments: []));
+        $this->assertInstanceOf(Message::class, (new Messages($http))->edit('msg-1', 'Меню закрыто.', attachments: []));
     }
 
     public function testEditWithAttachmentsReplacesExisting(): void
@@ -383,9 +378,10 @@ final class MessagesTest extends TestCase
                 ['text' => 'Updated', 'attachments' => $attachments],
                 ['message_id' => 'msg-5'],
             )
-            ->willReturn(['success' => true]);
+            ->willReturn($this->messageResponse('msg-5', 'Updated'));
 
-        $this->assertTrue((new Messages($http))->edit('msg-5', 'Updated', attachments: $attachments));
+        $result = (new Messages($http))->edit('msg-5', 'Updated', attachments: $attachments);
+        $this->assertInstanceOf(Message::class, $result);
     }
 
     // -------------------------------------------------------------------------

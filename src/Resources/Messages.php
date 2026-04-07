@@ -142,7 +142,7 @@ final class Messages
         ?string $format = null,
         bool    $notify = true,
         ?array  $attachments = null,
-    ): bool {
+    ): Message {
         $body = [];
 
         if ($text !== null) {
@@ -160,7 +160,7 @@ final class Messages
 
         $data = $this->http->request('PUT', '/messages', $body, ['message_id' => $messageId]);
 
-        return (bool) ($data['success'] ?? false);
+        return Message::fromArray($data['message']);
     }
 
     /**
